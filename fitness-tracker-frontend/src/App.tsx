@@ -30,10 +30,11 @@ function App() {
     location.pathname === "/login" || location.pathname === "/register";
 
   return (
-    <WebSocketProvider>
-      <div className='main-container'>
+    <div className='main-container'>
         {!hideNavBar && <NavBar />} {/*hide navbar on login and register page*/}
-        {!hideNavBar && <Notifications />}
+        <WebSocketProvider>
+          {!hideNavBar && <Notifications />}
+        </WebSocketProvider>
         <Routes>
           <Route path='/' element={<HomePage />} />
           <Route path='/login' element={<LoginPage />} />
@@ -51,7 +52,6 @@ function App() {
           <Route path='*' element={<NotFoundPage />} />
         </Routes>
       </div>
-    </WebSocketProvider>
   );
 }
 
