@@ -45,3 +45,10 @@ export type Password = {
     oldPassword: string,
     newPassword: string
 }
+
+export type ScheduledRoutine = {
+    //id?: string,
+    routineId: string,
+    userId: string,
+    scheduledAt: string
+}

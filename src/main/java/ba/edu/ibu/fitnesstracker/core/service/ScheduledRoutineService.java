@@ -14,7 +14,7 @@ public class ScheduledRoutineService {
         this.scheduledRoutineRepository = scheduledRoutinesRepository;
     }
 
-    public ScheduledRoutineDTO addScheduledRoutine(ScheduledRoutineRequestDTO payload) {
+    public ScheduledRoutineDTO addScheduledRoutine(final ScheduledRoutineRequestDTO payload) {
         ScheduledRoutine scheduledRoutine = this.scheduledRoutineRepository.save(payload.toEntity());
 
         return new ScheduledRoutineDTO(scheduledRoutine);

@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useEffect, useRef, useCallback, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useCallback, useState, ReactNode } from "react";
+import { useSelector } from "react-redux";
+
+import { RootState } from "src/store";
 
 interface WebSocketContextType {
   addMessageListener: (listener: (message: any) => void) => void;
@@ -23,8 +26,9 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
     listeners.current.forEach(listener => listener(message));
   }, []);
 
+  const userId = useSelector((state: RootState) => state.auth.userId);
+
   useEffect(() => {
-    const userId = "6655ba845d5f155e3da6c5a0"; 
     console.log("Initializing WebSocket connection for user:", userId);
 
     ws.current = new WebSocket(`ws://localhost:8080/websocket?userId=${userId}`);

@@ -17,6 +17,8 @@ const Notifications = () => {
   useEffect(() => {
     const handleMessage = (message: any) => {
       try {
+        console.log("Incoming message: ", message); 
+
         const newNotification = { id: Date.now(), message };
 
         setNotifications((prevNotifications) => [

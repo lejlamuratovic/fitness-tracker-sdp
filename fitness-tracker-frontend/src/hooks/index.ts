@@ -18,3 +18,4 @@ export { default as useMarkRoutineDone } from "./routines/useMarkRoutineDone";
 export { default as useFavoriteRoutines } from "./routines/useFavoriteRoutines";
 export { default as useAddRoutineToFavorites } from "./routines/useAddRoutineToFavorites";
 export { default as useRemoveFavoriteRoutine } from "./routines/useRemoveFavoriteRoutine";
+export { default as useAddScheduledRoutines } from "./scheduledRoutine/useAddScheduledRoutine";
