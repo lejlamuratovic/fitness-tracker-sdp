@@ -18,6 +18,8 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.io.UnsupportedEncodingException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class EmailService {
@@ -67,4 +69,36 @@ public class EmailService {
         }
     }
 
+    public void sendRoutineReminder(String email, String name, LocalDateTime scheduledTime) {
+        try {
+            logger.info("Attempting to send routine reminder to: {}", email);
+
+            String mailFrom = environment.getProperty("spring.mail.properties.mail.smtp.from");
+            String mailFromName = environment.getProperty("mail.from.name", "Fitness Tracker");
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper emailHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            emailHelper.setTo(email);
+            emailHelper.setSubject("Routine Reminder");
+            emailHelper.setFrom(new InternetAddress(mailFrom, mailFromName));
+
+            String formattedTime = scheduledTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+
+            Context ctx = new Context(LocaleContextHolder.getLocale());
+            ctx.setVariable("name", name);
+            ctx.setVariable("scheduledTime", formattedTime);
+
+            String htmlContent = htmlTemplateEngine.process("scheduled_routine", ctx);
+            emailHelper.setText(htmlContent, true);
+
+            logger.info("Sending routine reminder to {}", email);
+            mailSender.send(mimeMessage);
+            logger.info("Routine reminder sent successfully to {}", email);
+        } catch (MessagingException | UnsupportedEncodingException | MailException e) {
+            logger.error("Failed to send routine reminder to {}: {}", email, e.getMessage());
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred when sending routine reminder to {}: {}", email, e.getMessage());
+        }
+    }
 }
