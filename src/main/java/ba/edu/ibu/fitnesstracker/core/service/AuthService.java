@@ -74,7 +74,7 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("This user does not exist."));
 
         String jwt = jwtService.generateToken(user, user.getId(), user.getUserType(), user.isActive()); // passing the user ID and usertype
-        
+
         return new LoginDTO(jwt, user.isActive());
     }
 
@@ -96,15 +96,17 @@ public class AuthService {
         return true;
     }
 
-    public User confirmUser(String token) {
+    public boolean confirmUser(String token) {
         User user = userRepository.findByConfirmationToken(token);
 
         if (user != null) {
             user.setActive(true);
             user.setConfirmationToken(null);
             userRepository.save(user);
+
+            return true;
         }
 
-        return user;
+        return false;
     }
 }

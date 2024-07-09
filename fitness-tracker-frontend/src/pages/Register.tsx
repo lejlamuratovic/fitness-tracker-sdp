@@ -20,6 +20,8 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
+import VerifyEmail from "src/components/VerifyEmail";
+
 import { AppDispatch, RootState } from "src/store";
 import { registerUser } from "src/store/authSlice";
 
@@ -76,13 +78,16 @@ const Register = () => {
   };
 
   const navigate = useNavigate();
-  useEffect(() => {
-    // redirect user to login page if registration was successful
-    if (success) navigate("/login");
 
-    // redirect authenticated user to home screen
-    if (userToken) navigate("/");
-  }, [navigate, userToken, success]);
+  useEffect(() => {
+    if (userToken) {
+      navigate("/");
+    }
+  }, [navigate, userToken]);
+
+  if (success) {
+    return <VerifyEmail />;
+  }
 
   return (
     <Paper elevation={3} sx={{ maxWidth: "360px", padding: 3, mx: "auto" }}>
