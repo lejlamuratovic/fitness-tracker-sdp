@@ -59,13 +59,6 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
-    @RequestMapping(method = RequestMethod.GET, path = "/send-email")
-    public String sendEmailToAllUsers(@RequestParam String message) {
-        return userService.sendEmailToAllUsers(message);
-    }
-
-
     @RequestMapping(method = RequestMethod.PUT, path = "/password/{id}")
     public ResponseEntity<String> updatePassword(@PathVariable String id, @RequestBody PasswordRequestDTO passwordUpdateRequest) {
         try {

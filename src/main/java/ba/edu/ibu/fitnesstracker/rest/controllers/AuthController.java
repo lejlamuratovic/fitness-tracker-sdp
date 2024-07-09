@@ -1,6 +1,7 @@
 package ba.edu.ibu.fitnesstracker.rest.controllers;
 
 
+import ba.edu.ibu.fitnesstracker.core.model.User;
 import ba.edu.ibu.fitnesstracker.core.service.AuthService;
 import ba.edu.ibu.fitnesstracker.rest.dto.LoginDTO;
 import ba.edu.ibu.fitnesstracker.rest.dto.LoginRequestDTO;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -29,5 +31,16 @@ public class AuthController {
     @RequestMapping(method = RequestMethod.POST, path = "/login")
     public ResponseEntity<LoginDTO> login(@RequestBody LoginRequestDTO loginRequest) {
         return ResponseEntity.ok(authService.signIn(loginRequest));
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path="/confirm")
+    public ResponseEntity<?> confirmRegistration(@RequestParam("token") String token) {
+        User user = authService.confirmUser(token);
+
+        if (user != null) {
+            return ResponseEntity.ok("Account confirmed successfully.");
+        }
+
+        return ResponseEntity.badRequest().body("Invalid token.");
     }
 }

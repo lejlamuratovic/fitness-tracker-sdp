@@ -15,6 +15,7 @@ public class UserDTO {
     private String email;
     private Date creationDate;
     private List<Routine> favoriteRoutines;
+    private String confirmationToken;
 
     public UserDTO(User user) {
         this.id = user.getId();
@@ -24,6 +25,7 @@ public class UserDTO {
         this.email = user.getEmail();
         this.creationDate = user.getCreationDate();
         this.favoriteRoutines = user.getFavoriteRoutines();
+        this.confirmationToken = user.getConfirmationToken();
     }
 
     public String getId() {
@@ -80,5 +82,13 @@ public class UserDTO {
 
     public void setFavoriteRoutines(List<Routine> favoriteRoutines) {
         this.favoriteRoutines = favoriteRoutines;
+    }
+
+    public String getConfirmationToken() {
+        return confirmationToken;
+    }
+
+    public void setConfirmationToken(String confirmationToken) {
+        this.confirmationToken = confirmationToken;
     }
 }
