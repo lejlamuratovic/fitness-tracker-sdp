@@ -17,9 +17,7 @@ public class Routine {
     private List<ExerciseDetail> exercises;
     private String userId;
     private Date creationDate;
-
     private Boolean isPrivate;
-
     private int likes;
 
     public Routine() {

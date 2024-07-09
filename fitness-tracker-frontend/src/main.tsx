@@ -15,8 +15,16 @@ const queryClient = new QueryClient({
   }
 })
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+    console.log("Service Worker registered with scope:", registration.scope);
+  }).catch(function(error) {
+    console.log("Service Worker registration failed:", error);
+  });
+}
+
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Provider store={store}>
@@ -24,5 +32,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </Provider>
       </BrowserRouter>
     </QueryClientProvider>
-  </React.StrictMode>,
 )

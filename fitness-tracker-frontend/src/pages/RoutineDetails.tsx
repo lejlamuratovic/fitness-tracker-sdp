@@ -6,15 +6,17 @@ import ExerciseDetailList from "src/components/ExerciseDetailList";
 import Loading from "src/components/Loading";
 import ErrorAlert from "src/components/ErrorAlert";
 import SuccessAlert from "src/components/SuccessAlert";
+import CustomDialog from "src/components/CustomDialog";
+
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { Box, Container, TextField, Typography, Button } from "@mui/material";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
 
 import { ExerciseDetail, Routine } from "src/utils/types";
-import { useRoutine, useUpdateRoutine, useMarkRoutineDone } from "src/hooks";
+import { useRoutine, useUpdateRoutine, useMarkRoutineDone, useAddScheduledRoutines } from "src/hooks";
 import { RootState } from "src/store";
 
 const RoutineDetails = () => {
@@ -25,16 +27,18 @@ const RoutineDetails = () => {
 
   const [routine, setRoutine] = useState<Routine | null>(null);
   const [isChanged, setIsChanged] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString());
   const [deletedExercises, setDeletedExercises] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState(false);
   const [alertKey, setAlertKey] = useState("");
+  const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
+  const [openCompletionDialog, setOpenCompletionDialog] = useState(false);
 
   const currentUserID = useSelector((state: RootState) => state.auth.userId);
 
   const updateRoutine = useUpdateRoutine();
   const markDone = useMarkRoutineDone();
+  const addScheduledRoutine = useAddScheduledRoutines();
 
   useEffect(() => {
     if (data) setRoutine(data);
@@ -73,10 +77,15 @@ const RoutineDetails = () => {
   };
 
   const handleCompleteRoutine = () => {
-    setOpenDialog(true);
+    setOpenCompletionDialog(true);
   };
 
-  const handleCloseDialog = () => setOpenDialog(false);
+  const handleScheduleRoutine = () => {
+    setOpenScheduleDialog(true);
+  };
+
+  const handleCloseScheduleDialog = () => setOpenScheduleDialog(false);
+  const handleCloseCompletionDialog = () => setOpenCompletionDialog(false);
 
   const handleConfirmCompletion = () => {
     const formattedDate = new Date(selectedDate).toISOString();
@@ -90,7 +99,30 @@ const RoutineDetails = () => {
         },
       }
     );
-    setOpenDialog(false);
+    setOpenCompletionDialog(false);
+  };
+
+  const handleConfirmSchedule = async () => {
+    const utcDate = new Date(selectedDate).toISOString();
+  
+    if (!id || !currentUserID) {
+      return;
+    }
+
+    addScheduledRoutine.mutate(
+      { routine: { userId: currentUserID, routineId: id, scheduledAt: utcDate } },
+      {
+        onSuccess: () => {
+          handleSuccess();
+          console.log("Scheduled successfully with date:", utcDate);
+          setOpenScheduleDialog(false);
+        },
+        onError: (error) => {
+          console.error("Error scheduling the routine:", error);
+          alert("Failed to schedule the routine. Please check your connection and try again.");
+        }
+      }
+    );
   };
 
   const handleDateChange = (event: any) => {
@@ -126,15 +158,15 @@ const RoutineDetails = () => {
         }}
       >
         <Typography
-          variant='h4'
-          color='text.secondary'
+          variant="h4"
+          color="text.secondary"
           sx={{ fontWeight: "bold", letterSpacing: "2px" }}
         >
           Workout Plan
         </Typography>
         <Typography
-          variant='h4'
-          color='text.secondary'
+          variant="h4"
+          color="text.secondary"
           sx={{
             fontWeight: "semibold",
             textTransform: "uppercase",
@@ -147,7 +179,7 @@ const RoutineDetails = () => {
 
         {successMessage && (
           <SuccessAlert
-            message='Successfully marked as completed'
+            message="Successfully marked as completed"
             alertKey={alertKey}
           />
         )}
@@ -162,26 +194,26 @@ const RoutineDetails = () => {
             {isOwner ? (
               <>
                 <Typography
-                  variant='body1'
-                  color='text.secondary'
+                  variant="body1"
+                  color="text.secondary"
                   sx={{ mt: 2, fontSize: "25px" }}
                 >
                   Name
                 </Typography>
                 <TextField
-                  type='text'
+                  type="text"
                   value={routine.name}
                   onChange={handleRoutineChange}
-                  variant='outlined'
-                  size='medium'
+                  variant="outlined"
+                  size="medium"
                   InputProps={{ style: { color: "text.secondary" } }}
                   sx={{ minWidth: "300px", backgroundColor: "white" }}
                 />
               </>
             ) : (
               <Typography
-                variant='body1'
-                color='text.secondary'
+                variant="body1"
+                color="text.secondary"
                 sx={{
                   mt: 2,
                   fontSize: "25px",
@@ -196,8 +228,8 @@ const RoutineDetails = () => {
             {/* exercises */}
             <Box>
               <Typography
-                variant='body1'
-                color='text.secondary'
+                variant="body1"
+                color="text.secondary"
                 sx={{ mt: 2, fontSize: "25px" }}
               >
                 Exercises
@@ -224,45 +256,102 @@ const RoutineDetails = () => {
         >
           {isOwner && (
             <Button
-              variant='contained'
+              variant="contained"
               disabled={!isChanged}
-              color='success'
+              color="success"
               onClick={handleSaveChanges}
             >
               Save Changes
             </Button>
           )}
+          <Box
+            sx={{
+              display: "flex",
+              gap: "10px",
+              "@media (max-width: 600px)": { flexDirection: "column" },
+            }}
+          >
           <Button
-            variant='contained'
-            color='success'
-            onClick={handleCompleteRoutine}
+            variant="contained"
+            color="success"
+            onClick={ handleCompleteRoutine }
           >
             Complete Routine
           </Button>
+          <Button 
+            variant="contained"
+            color="info"
+            onClick={ handleScheduleRoutine }
+          >
+            Schedule Routine
+          </Button>
+          </Box>
         </Box>
       </Container>
 
-      {/* dialog for completing routine */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle sx={{ mb: 1, minWidth: "300px" }}>
-          Complete Routine
-        </DialogTitle>
+      {/* CustomDialog for scheduling routine */}
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <CustomDialog
+          open={openScheduleDialog}
+          onClose={handleCloseScheduleDialog}
+          title="Schedule Routine"
+          actions={[
+            {
+              label: "Cancel",
+              handler: handleCloseScheduleDialog,
+              color: "inherit",
+            },
+            {
+              label: "Confirm",
+              handler: handleConfirmSchedule, 
+              color: "primary",
+            },
+          ]}
+        >
+          <DialogContent>
+            <DateTimePicker
+              label="Schedule Date and Time"
+              onChange={(newValue) => {
+                if (newValue) setSelectedDate(newValue.toISOString());
+              }}
+              ampm={true} 
+              views={['year', 'month', 'day', 'hours', 'minutes']} 
+              sx={{ width: "100%" }}
+            />
+          </DialogContent>
+        </CustomDialog>
+      </LocalizationProvider>
+
+      {/* CustomDialog for completing routine */}
+      <CustomDialog
+        open={openCompletionDialog}
+        onClose={handleCloseCompletionDialog}
+        title="Complete Routine"
+        actions={[
+          {
+            label: "Cancel",
+            handler: handleCloseCompletionDialog,
+            color: "inherit",
+          },
+          {
+            label: "Confirm",
+            handler: handleConfirmCompletion, 
+            color: "primary",
+          },
+        ]}
+      >
         <DialogContent>
           <TextField
-            label='Completion Date'
-            type='date'
+            label="Completion Date"
+            type="date"
             value={selectedDate.split("T")[0]} // extract only the date part for this field
             onChange={handleDateChange}
             InputLabelProps={{ shrink: true }}
-            margin='dense'
+            margin="dense"
             fullWidth
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleConfirmCompletion}>Confirm</Button>
-        </DialogActions>
-      </Dialog>
+      </CustomDialog>
     </>
   );
 };

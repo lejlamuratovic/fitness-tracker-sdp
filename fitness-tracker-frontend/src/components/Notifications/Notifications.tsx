@@ -1,52 +1,41 @@
-import { useState, useEffect } from "react";
-
+import { useEffect, useState } from "react";
 import { Alert, Box } from "@mui/material";
 
+import { useWebSocket } from "src/store/WebSocketContext";
+
 const Notifications = () => {
-  const token = localStorage.getItem("userToken");
+  const webSocketContext = useWebSocket();
+
+  if (!webSocketContext) {
+    return null;
+  }
+
+  const { addMessageListener, removeMessageListener } = webSocketContext;
+
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!token) {
-      console.error("User token not found");
-      return;
-    }
-
-    const socketUrl = `ws://localhost:8080/websocket?token=${token}`;
-    const socket = new WebSocket(socketUrl);
-
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
-    };
-
-    socket.onmessage = (event) => {
+    const handleMessage = (message: any) => {
       try {
-        const message = event.data;
+        console.log("Incoming message: ", message); 
+
         const newNotification = { id: Date.now(), message };
 
         setNotifications((prevNotifications) => [
           ...prevNotifications,
           newNotification,
         ]);
-        console.log("Incoming message:", message);
       } catch (error: any) {
         console.error("Error handling incoming message:", error.message);
       }
     };
 
-    socket.onclose = (event: any) => {
-      console.log("WebSocket closed:", event.reason, "Code:", event.code);
-    };
+    addMessageListener(handleMessage);
 
-    socket.onerror = (error: any) => {
-      console.error("WebSocket error:", error.message);
-    };
-
-    // cleanup socket when unmounting component
     return () => {
-      socket.close();
+      removeMessageListener(handleMessage);
     };
-  }, [token]);
+  }, [addMessageListener, removeMessageListener]);
 
   const handleClose = (id: number) => {
     setNotifications((prevNotifications) =>
@@ -64,16 +53,16 @@ const Notifications = () => {
         zIndex: 5,
       }}
     >
-      {notifications.map((notification) => (
+      { notifications.map((notification: any) => (
         <Alert
           severity='info'
-          key={notification.id}
+          key={ notification.id }
           onClose={() => handleClose(notification.id)}
           sx={{ mb: 2 }}
         >
-          {notification.message}
+          { notification.message }
         </Alert>
-      ))}
+      )) }
     </Box>
   );
 };

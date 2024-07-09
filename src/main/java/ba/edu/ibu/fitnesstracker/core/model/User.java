@@ -23,12 +23,14 @@ public class User implements UserDetails {
     private String password;
     private Date creationDate;
     private List<Routine> favoriteRoutines;
+    private boolean isActive;
+    private String confirmationToken;
 
     public User() {
     }
 
     public User(String id, UserType userType, String firstName, String lastName, String email, String password,
-            Date creationDate, List<Routine> favouriteRoutines) {
+                Date creationDate, List<Routine> favouriteRoutines, boolean isActive, String confirmationToken) {
         this.id = id;
         this.userType = userType;
         this.firstName = firstName;
@@ -37,6 +39,11 @@ public class User implements UserDetails {
         this.password = password;
         this.creationDate = creationDate;
         this.favoriteRoutines = favouriteRoutines;
+        this.isActive = isActive;
+        this.confirmationToken = confirmationToken;
+    }
+
+    public User(User entity) {
     }
 
     public String getId() {
@@ -133,4 +140,19 @@ public class User implements UserDetails {
         this.password = password;
     }
 
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+    public String getConfirmationToken() {
+        return confirmationToken;
+    }
+
+    public void setConfirmationToken(String confirmationToken) {
+        this.confirmationToken = confirmationToken;
+    }
 }

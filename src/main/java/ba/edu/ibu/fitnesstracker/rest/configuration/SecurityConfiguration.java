@@ -44,6 +44,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/routines/**").authenticated()
                         .requestMatchers("/api/workoutlogs/**").authenticated()
+                        .requestMatchers(("/api/scheduled-routines/**")).authenticated()
                         .anyRequest().permitAll())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

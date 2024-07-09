@@ -1,6 +1,5 @@
 package ba.edu.ibu.fitnesstracker.core.service;
 
-import ba.edu.ibu.fitnesstracker.core.api.mailsender.MailSender;
 import ba.edu.ibu.fitnesstracker.core.model.Routine;
 import ba.edu.ibu.fitnesstracker.core.repository.UserRepository;
 import ba.edu.ibu.fitnesstracker.core.repository.RoutineRepository;
@@ -27,9 +26,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoutineRepository routineRepository;
-
-    @Autowired
-    private MailSender mailgunSender;
 
     public UserService(UserRepository userRepository, RoutineRepository routineRepository) {
         this.userRepository = userRepository;
@@ -146,11 +142,6 @@ public class UserService {
         } else {
             throw new ResourceNotFoundException("Routine is not in favorites list.");
         }
-    }
-
-    public String sendEmailToAllUsers(String message) {
-        List<User> users = userRepository.findAll();
-        return mailgunSender.send(users, message);
     }
 
     public UserDetailsService userDetailsService() {
