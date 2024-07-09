@@ -141,11 +141,11 @@ public class User implements UserDetails {
     }
 
     public boolean isActive() {
-        return isActive;
+        return this.isActive;
     }
 
     public void setActive(boolean active) {
-        isActive = active;
+        this.isActive = active;
     }
 
     public String getConfirmationToken() {

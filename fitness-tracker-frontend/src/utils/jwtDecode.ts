@@ -5,6 +5,7 @@ interface JwtPayload {
     userId: string;
     iat: number;
     exp: number;
+    active: boolean;
 }
 
 export const decodeToken = (token: string): JwtPayload | null => {

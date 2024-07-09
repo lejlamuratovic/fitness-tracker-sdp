@@ -61,9 +61,9 @@ const Login = () => {
     <Paper elevation={3} sx={{ maxWidth: "360px", padding: 3, mx: "auto" }}>
       {error && (
         <Typography
-          color='red'
-          variant='body1'
-          align='center'
+          color="error"
+          variant="body1"
+          align="center"
           gutterBottom
           sx={{ mb: 2 }}
         >

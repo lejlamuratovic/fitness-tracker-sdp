@@ -73,9 +73,9 @@ public class AuthService {
         User user = userRepository.findByEmail(loginRequestDTO.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("This user does not exist."));
 
-        String jwt = jwtService.generateToken(user, user.getId(), user.getUserType()); // passing the user ID and usertype
-
-        return new LoginDTO(jwt);
+        String jwt = jwtService.generateToken(user, user.getId(), user.getUserType(), user.isActive()); // passing the user ID and usertype
+        
+        return new LoginDTO(jwt, user.isActive());
     }
 
     public boolean updateUserPassword(String id, PasswordRequestDTO request) {
