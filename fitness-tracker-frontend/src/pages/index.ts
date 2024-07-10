@@ -9,3 +9,4 @@ export { default as ExercisePage } from "./ExercisePage";
 export { default as NotFoundPage } from "./NotFoundPage";
 export { default as CommunityPage } from "./CommunityPage";
 export { default as FavoritesPage } from "./FavoritesPage";
+export { default as ResetPasswordPage } from "./ResetPasswordPage";

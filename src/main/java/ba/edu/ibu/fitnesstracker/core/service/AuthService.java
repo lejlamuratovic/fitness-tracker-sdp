@@ -1,9 +1,12 @@
 package ba.edu.ibu.fitnesstracker.core.service;
 
 import ba.edu.ibu.fitnesstracker.core.exceptions.repository.ResourceNotFoundException;
+import ba.edu.ibu.fitnesstracker.core.model.ActionLog;
 import ba.edu.ibu.fitnesstracker.core.model.User;
+import ba.edu.ibu.fitnesstracker.core.repository.ActionLogRepository;
 import ba.edu.ibu.fitnesstracker.core.repository.UserRepository;
 import ba.edu.ibu.fitnesstracker.rest.dto.*;
+import jakarta.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +16,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
 public class AuthService {
     private final UserRepository userRepository;
+    private final ActionLogRepository actionLogRepository;
 
     @Autowired
     private EmailService emailService;
@@ -33,12 +39,13 @@ public class AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, ActionLogRepository actionLogRepository) {
         this.userRepository = userRepository;
+        this.actionLogRepository = actionLogRepository;
     }
 
 
-    public UserDTO signUp(UserRequestDTO userRequestDTO) {
+    public UserDTO signUp(UserRequestDTO userRequestDTO) throws MessagingException, UnsupportedEncodingException {
         // check if user already exists with the given email
         userRepository.findByEmail(userRequestDTO.getEmail())
                 .ifPresent(u -> {
@@ -108,5 +115,50 @@ public class AuthService {
         }
 
         return false;
+    }
+
+    public void logAction(String email, String action) {
+        actionLogRepository.save(new ActionLog(email, action, LocalDateTime.now()));
+    }
+
+    public String initiatePasswordReset(String email) throws MessagingException, UnsupportedEncodingException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String token = generateFiveDigitToken();
+
+        user.setPasswordResetToken(token);
+
+        userRepository.save(user);
+        emailService.sendPasswordResetEmail(user, token);
+
+        logAction(email, "Password reset initiated");
+
+        return token;
+    }
+
+    private String generateFiveDigitToken() {
+        SecureRandom random = new SecureRandom();
+
+        int num = random.nextInt(100000);
+
+        return String.format("%05d", num);
+    }
+
+    public boolean verifyResetToken(String email, String token) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return token.equals(user.getPasswordResetToken());
+    }
+
+    public void updatePassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordResetToken(null);
+
+        userRepository.save(user);
     }
 }

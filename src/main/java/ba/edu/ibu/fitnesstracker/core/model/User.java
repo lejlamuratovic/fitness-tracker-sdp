@@ -25,12 +25,13 @@ public class User implements UserDetails {
     private List<Routine> favoriteRoutines;
     private boolean isActive;
     private String confirmationToken;
+    private String passwordResetToken;
 
     public User() {
     }
 
     public User(String id, UserType userType, String firstName, String lastName, String email, String password,
-                Date creationDate, List<Routine> favouriteRoutines, boolean isActive, String confirmationToken) {
+                Date creationDate, List<Routine> favouriteRoutines, boolean isActive, String confirmationToken, String passwordResetToken) {
         this.id = id;
         this.userType = userType;
         this.firstName = firstName;
@@ -41,6 +42,7 @@ public class User implements UserDetails {
         this.favoriteRoutines = favouriteRoutines;
         this.isActive = isActive;
         this.confirmationToken = confirmationToken;
+        this.passwordResetToken = passwordResetToken;
     }
 
     public User(User entity) {
@@ -154,5 +156,13 @@ public class User implements UserDetails {
 
     public void setConfirmationToken(String confirmationToken) {
         this.confirmationToken = confirmationToken;
+    }
+
+    public String getPasswordResetToken() {
+        return passwordResetToken;
+    }
+
+    public void setPasswordResetToken(String passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
     }
 }

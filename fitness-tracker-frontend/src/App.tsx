@@ -15,6 +15,7 @@ import {
   NotFoundPage,
   CommunityPage,
   FavoritesPage,
+  ResetPasswordPage
 } from "src/pages";
 
 import ProtectedRoute from "src/utils/ProtectedRoutes";
@@ -27,7 +28,7 @@ function App() {
 
   // check login or register page
   const hideNavBar =
-    location.pathname === "/login" || location.pathname === "/register";
+    location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/reset-password";
 
   return (
     <div className='main-container'>
@@ -49,6 +50,7 @@ function App() {
             <Route path='/favorites' element={<FavoritesPage />} />
           </Route>
           <Route path='/explore' element={<ExplorePage />} />
+          <Route path='/reset-password' element={<ResetPasswordPage />} />
           <Route path='*' element={<NotFoundPage />} />
         </Routes>
       </div>

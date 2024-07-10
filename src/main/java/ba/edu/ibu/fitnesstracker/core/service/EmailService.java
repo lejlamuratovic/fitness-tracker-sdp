@@ -33,72 +33,56 @@ public class EmailService {
     @Autowired
     private Environment environment;
 
-    @Value("${base.url}")
-    private String BASE_URL;
+    @Value("${base.frontendUrl}")
+    private String BASE_FRONTEND_URL;
+
+    private final String mailFrom;
+    private final String mailFromName;
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
-    public void sendConfirmationEmail(User user) {
-        try {
-            String mailFrom = environment.getProperty("spring.mail.properties.mail.smtp.from");
-            String mailFromName = environment.getProperty("mail.from.name", "Identity");
-            String confirmationUrl = BASE_URL + "/api/auth/confirm?token=" + user.getConfirmationToken();
-
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper email = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-
-            email.setTo(user.getEmail());
-            email.setSubject("Registration Confirmation");
-            email.setFrom(new InternetAddress(mailFrom, mailFromName));
-
-            Context ctx = new Context(LocaleContextHolder.getLocale());
-            ctx.setVariable("email", user.getEmail());
-            ctx.setVariable("name", user.getFirstName());
-            ctx.setVariable("url", confirmationUrl);
-
-            String htmlContent = htmlTemplateEngine.process("registration", ctx);
-            email.setText(htmlContent, true);
-
-            logger.info("Sending email to {}", user.getEmail());
-            mailSender.send(mimeMessage);
-            logger.info("Email sent successfully to {}", user.getEmail());
-        } catch (MessagingException | UnsupportedEncodingException | MailException e) {
-            logger.error("Failed to send email to {}: {}", user.getEmail(), e.getMessage());
-        } catch (Exception e) {
-            logger.error("An unexpected error occurred when sending email to {}: {}", user.getEmail(), e.getMessage());
-        }
+    public EmailService(Environment environment) {
+        this.mailFrom = environment.getProperty("spring.mail.properties.mail.smtp.from");
+        this.mailFromName = environment.getProperty("mail.from.name", "Fitness Tracker");
     }
 
-    public void sendRoutineReminder(String email, String name, LocalDateTime scheduledTime) {
-        try {
-            logger.info("Attempting to send routine reminder to: {}", email);
+    private void sendEmail(String to, String subject, String templateName, Context context) throws MessagingException, UnsupportedEncodingException, jakarta.mail.MessagingException {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            String mailFrom = environment.getProperty("spring.mail.properties.mail.smtp.from");
-            String mailFromName = environment.getProperty("mail.from.name", "Fitness Tracker");
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setFrom(new InternetAddress(mailFrom, mailFromName));
 
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper emailHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+        String htmlContent = htmlTemplateEngine.process(templateName, context);
+        helper.setText(htmlContent, true);
 
-            emailHelper.setTo(email);
-            emailHelper.setSubject("Routine Reminder");
-            emailHelper.setFrom(new InternetAddress(mailFrom, mailFromName));
+        mailSender.send(mimeMessage);
+        logger.info("Email sent successfully to {}", to);
+    }
 
-            String formattedTime = scheduledTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+    public void sendConfirmationEmail(User user) throws MessagingException, UnsupportedEncodingException, jakarta.mail.MessagingException {
+        Context ctx = new Context(LocaleContextHolder.getLocale());
+        ctx.setVariable("email", user.getEmail());
+        ctx.setVariable("name", user.getFirstName());
+        ctx.setVariable("url", BASE_FRONTEND_URL + "/api/auth/confirm?token=" + user.getConfirmationToken());
 
-            Context ctx = new Context(LocaleContextHolder.getLocale());
-            ctx.setVariable("name", name);
-            ctx.setVariable("scheduledTime", formattedTime);
+        sendEmail(user.getEmail(), "Registration Confirmation", "registration", ctx);
+    }
 
-            String htmlContent = htmlTemplateEngine.process("scheduled_routine", ctx);
-            emailHelper.setText(htmlContent, true);
+    public void sendRoutineReminder(String email, String name, LocalDateTime scheduledTime) throws MessagingException, UnsupportedEncodingException, jakarta.mail.MessagingException {
+        Context ctx = new Context(LocaleContextHolder.getLocale());
+        ctx.setVariable("name", name);
+        ctx.setVariable("scheduledTime", scheduledTime.format(DateTimeFormatter.ofPattern("HH:mm")));
 
-            logger.info("Sending routine reminder to {}", email);
-            mailSender.send(mimeMessage);
-            logger.info("Routine reminder sent successfully to {}", email);
-        } catch (MessagingException | UnsupportedEncodingException | MailException e) {
-            logger.error("Failed to send routine reminder to {}: {}", email, e.getMessage());
-        } catch (Exception e) {
-            logger.error("An unexpected error occurred when sending routine reminder to {}: {}", email, e.getMessage());
-        }
+        sendEmail(email, "Routine Reminder", "scheduled_routine", ctx);
+    }
+
+    public void sendPasswordResetEmail(User user, String token) throws MessagingException, UnsupportedEncodingException, jakarta.mail.MessagingException {
+        Context context = new Context(LocaleContextHolder.getLocale());
+        context.setVariable("name", user.getFirstName());
+        context.setVariable("resetToken", token);
+
+        sendEmail(user.getEmail(), "Password Reset Request", "password_reset", context);
     }
 }
