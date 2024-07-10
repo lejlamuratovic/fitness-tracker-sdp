@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -128,12 +129,12 @@ public class AuthService {
         String token = generateFiveDigitToken();
 
         user.setPasswordResetToken(token);
+        user.setPasswordResetTokenCreationTime(new Date());
 
         userRepository.save(user);
         emailService.sendPasswordResetEmail(user, token);
 
         logAction(email, "Password reset initiated");
-
         return token;
     }
 
@@ -149,7 +150,14 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        return token.equals(user.getPasswordResetToken());
+        if (token.equals(user.getPasswordResetToken())) {
+            long tokenAge = new Date().getTime() - user.getPasswordResetTokenCreationTime().getTime();
+            long tokenAgeInMinutes = tokenAge / 60000;
+
+            return tokenAgeInMinutes <= 5;
+        }
+
+        return false;
     }
 
     public void updatePassword(String email, String newPassword) {
@@ -158,6 +166,7 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setPasswordResetToken(null);
+        user.setPasswordResetTokenCreationTime(null);
 
         userRepository.save(user);
     }
