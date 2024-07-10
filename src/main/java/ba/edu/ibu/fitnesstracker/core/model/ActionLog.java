@@ -1,5 +1,6 @@
 package ba.edu.ibu.fitnesstracker.core.model;
 
+import ba.edu.ibu.fitnesstracker.core.model.enums.ActionType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,10 +12,10 @@ public class ActionLog {
     @Id
     private String id;
     private String userEmail;
-    private String action;
+    private ActionType action;
     private LocalDateTime timestamp;
 
-    public ActionLog(String userEmail, String action, LocalDateTime timestamp) {
+    public ActionLog(String userEmail, ActionType action, LocalDateTime timestamp) {
         this.userEmail = userEmail;
         this.action = action;
         this.timestamp = timestamp;
@@ -36,11 +37,11 @@ public class ActionLog {
         this.userEmail = userEmail;
     }
 
-    public String getAction() {
+    public ActionType getAction() {
         return action;
     }
 
-    public void setAction(String action) {
+    public void setAction(ActionType action) {
         this.action = action;
     }
 

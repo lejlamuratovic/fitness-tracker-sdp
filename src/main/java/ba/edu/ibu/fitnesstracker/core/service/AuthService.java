@@ -3,6 +3,7 @@ package ba.edu.ibu.fitnesstracker.core.service;
 import ba.edu.ibu.fitnesstracker.core.exceptions.repository.ResourceNotFoundException;
 import ba.edu.ibu.fitnesstracker.core.model.ActionLog;
 import ba.edu.ibu.fitnesstracker.core.model.User;
+import ba.edu.ibu.fitnesstracker.core.model.enums.ActionType;
 import ba.edu.ibu.fitnesstracker.core.repository.ActionLogRepository;
 import ba.edu.ibu.fitnesstracker.core.repository.UserRepository;
 import ba.edu.ibu.fitnesstracker.rest.dto.*;
@@ -75,15 +76,21 @@ public class AuthService {
     }
 
     public LoginDTO signIn(LoginRequestDTO loginRequestDTO) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequestDTO.getEmail(), loginRequestDTO.getPassword())
-        );
-        User user = userRepository.findByEmail(loginRequestDTO.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("This user does not exist."));
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequestDTO.getEmail(), loginRequestDTO.getPassword())
+            );
 
-        String jwt = jwtService.generateToken(user, user.getId(), user.getUserType(), user.isActive()); // passing the user ID and usertype
+            User user = userRepository.findByEmail(loginRequestDTO.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("This user does not exist."));
 
-        return new LoginDTO(jwt, user.isActive());
+            String jwt = jwtService.generateToken(user, user.getId(), user.getUserType(), user.isActive());
+
+            return new LoginDTO(jwt, user.isActive());
+        } catch (Exception e) {
+            logAction(loginRequestDTO.getEmail(), ActionType.FAILED_LOGIN);
+            throw e;
+        }
     }
 
     public boolean updateUserPassword(String id, PasswordRequestDTO request) {
@@ -118,7 +125,7 @@ public class AuthService {
         return false;
     }
 
-    public void logAction(String email, String action) {
+    public void logAction(String email, ActionType action) {
         actionLogRepository.save(new ActionLog(email, action, LocalDateTime.now()));
     }
 
@@ -134,7 +141,7 @@ public class AuthService {
         userRepository.save(user);
         emailService.sendPasswordResetEmail(user, token);
 
-        logAction(email, "Password reset initiated");
+        logAction(email, ActionType.PASSWORD_RESET);
         return token;
     }
 
