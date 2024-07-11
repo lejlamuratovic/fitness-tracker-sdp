@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 
 @RestController
 @RequestMapping("api/auth")
@@ -35,7 +36,7 @@ public class AuthController {
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "/register")
-    public ResponseEntity<UserDTO> register(@RequestBody UserRequestDTO user) throws MessagingException, UnsupportedEncodingException {
+    public ResponseEntity<UserDTO> register(@RequestBody UserRequestDTO user) throws MessagingException, UnsupportedEncodingException, NoSuchAlgorithmException {
         return ResponseEntity.ok(authService.signUp(user));
     }
 

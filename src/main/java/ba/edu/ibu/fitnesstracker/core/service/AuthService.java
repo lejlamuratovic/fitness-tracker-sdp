@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,9 +23,13 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.Map;
 import java.util.UUID;
 
@@ -56,12 +62,16 @@ public class AuthService {
         this.actionLogRepository = actionLogRepository;
     }
 
-    public UserDTO signUp(UserRequestDTO userRequestDTO) throws MessagingException, UnsupportedEncodingException {
+    public UserDTO signUp(UserRequestDTO userRequestDTO) throws MessagingException, UnsupportedEncodingException, NoSuchAlgorithmException {
         // check if user already exists with the given email
         userRepository.findByEmail(userRequestDTO.getEmail())
                 .ifPresent(u -> {
                     throw new IllegalStateException("Email already in use");
                 });
+
+        if (isPasswordPwned(userRequestDTO.getPassword())) {
+            throw new IllegalStateException("The provided password has been compromised, please choose a different one");
+        }
 
         // create new user if not
         userRequestDTO.setPassword(passwordEncoder.encode(userRequestDTO.getPassword()));
@@ -212,5 +222,45 @@ public class AuthService {
 
     public void resetLoginAttempts(String ip, String email) {
         actionLogRepository.deleteActionLogsByIpAddressAndActionAndUserEmail(ip, ActionType.FAILED_LOGIN, email);
+    }
+
+    public boolean isPasswordPwned(String password) throws NoSuchAlgorithmException {
+        String sha1 = sha1Hex(password);
+        String prefix = sha1.substring(0, 5);
+        String suffix = sha1.substring(5).toUpperCase();
+
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.pwnedpasswords.com/range/" + prefix;
+        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            return response.getBody().contains(suffix);
+        }
+
+        return false;
+    }
+
+    private String sha1Hex(String input) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+
+        md.reset();
+
+        byte[] buffer = input.getBytes(StandardCharsets.UTF_8);
+
+        md.update(buffer);
+
+        byte[] digest = md.digest();
+
+        String hex = "";
+
+        try (Formatter formatter = new Formatter()) {
+            for (byte b : digest) {
+                formatter.format("%02x", b);
+            }
+
+            hex = formatter.toString();
+        }
+
+        return hex;
     }
 }
