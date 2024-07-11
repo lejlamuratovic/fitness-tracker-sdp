@@ -6,18 +6,18 @@ import emailIcon from "src/assets/email.png";
 import { useInitiatePasswordReset, useVerifyToken } from "src/hooks";
 
 const PasswordResetInitiate = () => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   const {
     mutate: initiateReset,
     isError: isInitiateError,
-    error: initiateError
+    error: initiateError, 
   } = useInitiatePasswordReset();
 
   const {
     mutate: verifyToken,
     isError: isVerifyError,
-    error: verifyError
+    error: verifyError,
   } = useVerifyToken();
 
   const [emailSent, setEmailSent] = useState(false);
@@ -29,6 +29,7 @@ const PasswordResetInitiate = () => {
       onSuccess: () => {
         setEmailSent(true);
         setEmail(data.email);
+        reset();  // Reset the form fields upon successful email submission
       }
     });
   };

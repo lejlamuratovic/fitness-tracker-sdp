@@ -2,7 +2,6 @@ package ba.edu.ibu.fitnesstracker.rest.controllers;
 
 
 import ba.edu.ibu.fitnesstracker.core.exceptions.repository.ResourceNotFoundException;
-import ba.edu.ibu.fitnesstracker.core.model.User;
 import ba.edu.ibu.fitnesstracker.core.service.AuthService;
 import ba.edu.ibu.fitnesstracker.rest.dto.LoginDTO;
 import ba.edu.ibu.fitnesstracker.rest.dto.LoginRequestDTO;
@@ -10,6 +9,7 @@ import ba.edu.ibu.fitnesstracker.rest.dto.PasswordResetRequestDTO;
 import ba.edu.ibu.fitnesstracker.rest.dto.UserDTO;
 import ba.edu.ibu.fitnesstracker.rest.dto.UserRequestDTO;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -40,8 +40,28 @@ public class AuthController {
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "/login")
-    public ResponseEntity<LoginDTO> login(@RequestBody LoginRequestDTO loginRequest) {
-        return ResponseEntity.ok(authService.signIn(loginRequest));
+    public LoginDTO login(@RequestBody LoginRequestDTO loginRequest, HttpServletRequest request) throws Exception {
+        String ip = request.getRemoteAddr();
+
+        // check if the user is currently blocked and if captcha is required
+        if (authService.isBlocked(ip, loginRequest.getEmail())) {
+            // if captcha response is provided, verify it
+            if (loginRequest.getCaptchaResponse() != null && !loginRequest.getCaptchaResponse().isEmpty()) {
+                if (authService.verifyCaptcha(loginRequest.getCaptchaResponse())) {
+                    // reset login attempts if captcha was solved correctly
+                    authService.resetLoginAttempts(ip, loginRequest.getEmail());
+
+                    return authService.signIn(loginRequest, ip);
+                } else {
+                    // captcha failed
+                    return new LoginDTO(null, true, true);
+                }
+            }
+
+            return new LoginDTO(null, true, true);
+        }
+
+        return authService.signIn(loginRequest, ip);
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/confirm")
@@ -61,9 +81,11 @@ public class AuthController {
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/initiate-password-reset")
-    public ResponseEntity<?> initiatePasswordReset(@RequestParam("email") String email) {
+    public ResponseEntity<?> initiatePasswordReset(@RequestParam("email") String email, HttpServletRequest request) {
         try {
-            String token = authService.initiatePasswordReset(email);
+            String ip = request.getRemoteAddr();
+
+            String token = authService.initiatePasswordReset(email, ip);
 
             return ResponseEntity.ok().build();
         } catch (ResourceNotFoundException e) {

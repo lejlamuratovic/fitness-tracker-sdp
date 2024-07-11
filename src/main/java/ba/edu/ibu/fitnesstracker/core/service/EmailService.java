@@ -36,6 +36,10 @@ public class EmailService {
     @Value("${base.frontendUrl}")
     private String BASE_FRONTEND_URL;
 
+    @Value("${base.url}")
+    private String BASE_URL;
+
+
     private final String mailFrom;
     private final String mailFromName;
 
@@ -65,7 +69,7 @@ public class EmailService {
         Context ctx = new Context(LocaleContextHolder.getLocale());
         ctx.setVariable("email", user.getEmail());
         ctx.setVariable("name", user.getFirstName());
-        ctx.setVariable("url", BASE_FRONTEND_URL + "/api/auth/confirm?token=" + user.getConfirmationToken());
+        ctx.setVariable("url", BASE_URL + "/api/auth/confirm?token=" + user.getConfirmationToken());
 
         sendEmail(user.getEmail(), "Registration Confirmation", "registration", ctx);
     }

@@ -40,6 +40,7 @@ const initialState = {
   error: null,
   success: false, // for monitoring the registration process
   active: active as boolean | null, // for monitoring the user's activation status
+  captchaRequired: false,
 };
 
 export const registerUser = createAsyncThunk(
@@ -66,6 +67,10 @@ export const login = createAsyncThunk(
 
       if (!data.active) {
         return rejectWithValue("Your account has not been confirmed. Please confirm your email address.");
+      }
+
+      if(data.captchaRequired) {
+        return rejectWithValue({ message: "Captcha required", captchaRequired: true });
       }
 
       localStorage.setItem("userToken", data.jwt);
@@ -123,8 +128,9 @@ const authSlice = createSlice({
     });
     builder.addCase(login.rejected, (state, action: any) => {
       state.loading = false;
-      state.error = action.payload;
-    });
+      state.error = action.payload.message || action.payload;
+      state.captchaRequired = action.payload.captchaRequired || false;
+    });    
   },
 });
 

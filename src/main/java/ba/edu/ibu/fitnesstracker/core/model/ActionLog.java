@@ -14,11 +14,13 @@ public class ActionLog {
     private String userEmail;
     private ActionType action;
     private LocalDateTime timestamp;
+    private String ipAddress;
 
-    public ActionLog(String userEmail, ActionType action, LocalDateTime timestamp) {
+    public ActionLog(String userEmail, ActionType action, LocalDateTime timestamp, String ipAddress) {
         this.userEmail = userEmail;
         this.action = action;
         this.timestamp = timestamp;
+        this.ipAddress = ipAddress;
     }
 
     public String getId() {
@@ -51,5 +53,13 @@ public class ActionLog {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }
