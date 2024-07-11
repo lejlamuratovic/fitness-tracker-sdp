@@ -121,7 +121,7 @@ public class AuthService {
         return count >= MAX_ATTEMPT;
     }
 
-    public void updateUserPassword(String id, PasswordRequestDTO request) {
+    public void updateUserPassword(String id, PasswordRequestDTO request) throws NoSuchAlgorithmException {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -131,6 +131,10 @@ public class AuthService {
 
         if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
             throw new IllegalStateException("New password cannot be the same as the old password");
+        }
+
+        if (isPasswordPwned(request.getNewPassword())) {
+            throw new IllegalStateException("The provided new password has been compromised, please choose a different one.");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -209,9 +213,13 @@ public class AuthService {
         return (Boolean) response.get("success");
     }
 
-    public void updatePassword(String email, String newPassword) {
+    public void updatePassword(String email, String newPassword) throws NoSuchAlgorithmException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (isPasswordPwned(newPassword)) {
+            throw new IllegalStateException("The provided new password has been compromised, please choose a different one.");
+        }
 
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setPasswordResetToken(null);

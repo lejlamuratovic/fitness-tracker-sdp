@@ -106,7 +106,7 @@ public class AuthController {
     }
 
     @RequestMapping(method = RequestMethod.PUT, path = "/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequestDTO request) {
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequestDTO request) throws NoSuchAlgorithmException {
         authService.updatePassword(request.getEmail(), request.getNewPassword());
 
         return ResponseEntity.ok().build();
