@@ -74,5 +74,4 @@ public class RoutineServiceTest {
         assertThat(updatedRoutine.getName()).isEqualTo("Updated Day 4");
         assertThat(updatedRoutine.getExercises()).isNotNull();
     }
-
 }

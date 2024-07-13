@@ -42,7 +42,7 @@ public class ExerciseTest {
     }
 
     @Test
-    void shouldCrateNewExerciseWithAssetJ() {
+    void shouldCreateNewExerciseWithAssetJ() {
         Exercise exercise = new Exercise(
                 "idExample",
                 "Lat pulldown",

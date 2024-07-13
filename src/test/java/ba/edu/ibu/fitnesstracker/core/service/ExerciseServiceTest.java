@@ -31,6 +31,7 @@ public class ExerciseServiceTest {
     @Test
     public void shouldReturnExerciseById() {
         Exercise exercise = new Exercise();
+
         exercise.setId("someId");
         exercise.setName("Bicep curl");
         exercise.setDescription("Some description");

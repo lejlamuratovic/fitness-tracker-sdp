@@ -16,7 +16,6 @@ public class RoutineRepositoryTest {
     @Autowired
     private RoutineRepository routineRepository;
 
-    /*
     @Order(1)
     @Test
     public void shouldSaveAndRetrieveRoutine() {
@@ -31,7 +30,7 @@ public class RoutineRepositoryTest {
                 "someUserId",
                 new Date(),
                         true,
-                        likes);
+                        0);
 
         routineRepository.save(newRoutine);
 
@@ -49,5 +48,4 @@ public class RoutineRepositoryTest {
         Optional<Routine> deletedExercise = routineRepository.findById(routineIdToDelete);
         assertFalse(deletedExercise.isPresent());
     }
-*/
 }
