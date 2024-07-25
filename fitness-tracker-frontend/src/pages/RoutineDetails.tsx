@@ -8,9 +8,9 @@ import ErrorAlert from "src/components/ErrorAlert";
 import SuccessAlert from "src/components/SuccessAlert";
 import CustomDialog from "src/components/CustomDialog";
 
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 import { Box, Container, TextField, Typography, Button } from "@mui/material";
 import DialogContent from "@mui/material/DialogContent";
@@ -29,7 +29,7 @@ const RoutineDetails = () => {
   const [isChanged, setIsChanged] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString());
   const [deletedExercises, setDeletedExercises] = useState<string[]>([]);
-  const [successMessage, setSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [alertKey, setAlertKey] = useState("");
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
   const [openCompletionDialog, setOpenCompletionDialog] = useState(false);
@@ -58,8 +58,8 @@ const RoutineDetails = () => {
     setIsChanged(true);
   };
 
-  const handleSuccess = () => {
-    setSuccessMessage(true);
+  const handleSuccess = (message: string) => {
+    setSuccessMessage(message);
     setAlertKey(`${Date.now()}-${Math.random()}`);
   };
 
@@ -95,7 +95,7 @@ const RoutineDetails = () => {
       { id: id, dateCompleted: formattedDate, userId: currentUserID },
       {
         onSuccess: () => {
-          handleSuccess();
+          handleSuccess("Successfully marked as completed!");
         },
       }
     );
@@ -113,12 +113,10 @@ const RoutineDetails = () => {
       { routine: { userId: currentUserID, routineId: id, scheduledAt: utcDate } },
       {
         onSuccess: () => {
-          handleSuccess();
-          console.log("Scheduled successfully with date:", utcDate);
+          handleSuccess("Routine successfully scheduled!");
           setOpenScheduleDialog(false);
         },
         onError: (error) => {
-          console.error("Error scheduling the routine:", error);
           alert("Failed to schedule the routine. Please check your connection and try again.");
         }
       }
@@ -179,7 +177,7 @@ const RoutineDetails = () => {
 
         {successMessage && (
           <SuccessAlert
-            message="Successfully marked as completed"
+            message={successMessage}
             alertKey={alertKey}
           />
         )}
@@ -315,7 +313,7 @@ const RoutineDetails = () => {
                 if (newValue) setSelectedDate(newValue.toISOString());
               }}
               ampm={true} 
-              views={['year', 'month', 'day', 'hours', 'minutes']} 
+              views={["year", "month", "day", "hours", "minutes"]} 
               sx={{ width: "100%" }}
             />
           </DialogContent>

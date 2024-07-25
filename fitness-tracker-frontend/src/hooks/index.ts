@@ -19,3 +19,6 @@ export { default as useFavoriteRoutines } from "./routines/useFavoriteRoutines";
 export { default as useAddRoutineToFavorites } from "./routines/useAddRoutineToFavorites";
 export { default as useRemoveFavoriteRoutine } from "./routines/useRemoveFavoriteRoutine";
 export { default as useAddScheduledRoutines } from "./scheduledRoutine/useAddScheduledRoutine";
+export { default as useInitiatePasswordReset } from "./users/useInitiatePasswordReset";
+export { default as useVerifyToken } from "./users/useVerifyToken";
+export { default as useResetPassword } from "./users/useResetPassword";

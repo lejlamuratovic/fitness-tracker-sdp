@@ -1,23 +1,45 @@
 package ba.edu.ibu.fitnesstracker.core.service;
 
 import ba.edu.ibu.fitnesstracker.core.exceptions.repository.ResourceNotFoundException;
+import ba.edu.ibu.fitnesstracker.core.model.ActionLog;
 import ba.edu.ibu.fitnesstracker.core.model.User;
+import ba.edu.ibu.fitnesstracker.core.model.enums.ActionType;
+import ba.edu.ibu.fitnesstracker.core.repository.ActionLogRepository;
 import ba.edu.ibu.fitnesstracker.core.repository.UserRepository;
 import ba.edu.ibu.fitnesstracker.rest.dto.*;
+import jakarta.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.Formatter;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class AuthService {
     private final UserRepository userRepository;
+    private final ActionLogRepository actionLogRepository;
+
+    @Value("${captcha.secretKey}")
+    private String SECRET_KEY;
 
     @Autowired
     private EmailService emailService;
@@ -31,19 +53,25 @@ public class AuthService {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    private static final int MAX_ATTEMPT = 3;
+
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, ActionLogRepository actionLogRepository) {
         this.userRepository = userRepository;
+        this.actionLogRepository = actionLogRepository;
     }
 
-
-    public UserDTO signUp(UserRequestDTO userRequestDTO) {
+    public UserDTO signUp(UserRequestDTO userRequestDTO) throws MessagingException, UnsupportedEncodingException, NoSuchAlgorithmException {
         // check if user already exists with the given email
         userRepository.findByEmail(userRequestDTO.getEmail())
                 .ifPresent(u -> {
                     throw new IllegalStateException("Email already in use");
                 });
+
+        if (isPasswordPwned(userRequestDTO.getPassword())) {
+            throw new IllegalStateException("The provided password has been compromised, please choose a different one");
+        }
 
         // create new user if not
         userRequestDTO.setPassword(passwordEncoder.encode(userRequestDTO.getPassword()));
@@ -66,19 +94,34 @@ public class AuthService {
         return new UserDTO(user);
     }
 
-    public LoginDTO signIn(LoginRequestDTO loginRequestDTO) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequestDTO.getEmail(), loginRequestDTO.getPassword())
-        );
-        User user = userRepository.findByEmail(loginRequestDTO.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("This user does not exist."));
+    public LoginDTO signIn(LoginRequestDTO loginRequestDTO, String ipAddress) throws Exception {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequestDTO.getEmail(), loginRequestDTO.getPassword())
+            );
 
-        String jwt = jwtService.generateToken(user, user.getId(), user.getUserType()); // passing the user ID and usertype
+            User user = userRepository.findByEmail(loginRequestDTO.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("This user does not exist"));
 
-        return new LoginDTO(jwt);
+            String jwt = jwtService.generateToken(user, user.getId(), user.getUserType(), user.isActive());
+
+            // reset failed login attempts upon successful login
+            resetLoginAttempts(ipAddress, loginRequestDTO.getEmail());
+
+            return new LoginDTO(jwt, user.isActive(), false);
+        } catch (Exception e) {
+            logAction(loginRequestDTO.getEmail(), ActionType.FAILED_LOGIN, ipAddress);
+            throw new Exception("Authentication failed", e);
+        }
     }
 
-    public boolean updateUserPassword(String id, PasswordRequestDTO request) {
+    public boolean isBlocked(String ip, String email) {
+        long count = actionLogRepository.countActionLogsByIpAddressAndActionAndUserEmail(ip, ActionType.FAILED_LOGIN, email);
+        logger.info("Count of failed attempts for IP {} and email {}: {}", ip, email, count);
+        return count >= MAX_ATTEMPT;
+    }
+
+    public void updateUserPassword(String id, PasswordRequestDTO request) throws NoSuchAlgorithmException {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -90,21 +133,142 @@ public class AuthService {
             throw new IllegalStateException("New password cannot be the same as the old password");
         }
 
+        if (isPasswordPwned(request.getNewPassword())) {
+            throw new IllegalStateException("The provided new password has been compromised, please choose a different one.");
+        }
+
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
-
-        return true;
     }
 
-    public User confirmUser(String token) {
+    public boolean confirmUser(String token) {
         User user = userRepository.findByConfirmationToken(token);
 
         if (user != null) {
             user.setActive(true);
             user.setConfirmationToken(null);
             userRepository.save(user);
+
+            return true;
         }
 
-        return user;
+        return false;
+    }
+
+    public void logAction(String email, ActionType action, String ipAddress) {
+        actionLogRepository.save(new ActionLog(email, action, LocalDateTime.now(), ipAddress));
+    }
+
+    public String initiatePasswordReset(String email, String ipAddress) throws MessagingException, UnsupportedEncodingException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String token = generateFiveDigitToken();
+
+        user.setPasswordResetToken(token);
+        user.setPasswordResetTokenCreationTime(new Date());
+
+        userRepository.save(user);
+        emailService.sendPasswordResetEmail(user, token);
+
+        logAction(email, ActionType.PASSWORD_RESET, ipAddress);
+        return token;
+    }
+
+    private String generateFiveDigitToken() {
+        SecureRandom random = new SecureRandom();
+
+        int num = random.nextInt(100000);
+
+        return String.format("%05d", num);
+    }
+
+    public boolean verifyResetToken(String email, String token) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (token.equals(user.getPasswordResetToken())) {
+            long tokenAge = new Date().getTime() - user.getPasswordResetTokenCreationTime().getTime();
+            long tokenAgeInMinutes = tokenAge / 60000;
+
+            return tokenAgeInMinutes <= 5;
+        }
+
+        return false;
+    }
+
+    public boolean verifyCaptcha(String captchaResponse) {
+        String url = "https://hcaptcha.com/siteverify";
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        MultiValueMap<String, String> requestMap = new LinkedMultiValueMap<>();
+
+        requestMap.add("secret", SECRET_KEY);
+        requestMap.add("response", captchaResponse);
+
+        Map<String, Object> response = restTemplate.postForObject(url, requestMap, Map.class);
+
+        assert response != null;
+        return (Boolean) response.get("success");
+    }
+
+    public void updatePassword(String email, String newPassword) throws NoSuchAlgorithmException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (isPasswordPwned(newPassword)) {
+            throw new IllegalStateException("The provided new password has been compromised, please choose a different one.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenCreationTime(null);
+
+        userRepository.save(user);
+    }
+
+    public void resetLoginAttempts(String ip, String email) {
+        actionLogRepository.deleteActionLogsByIpAddressAndActionAndUserEmail(ip, ActionType.FAILED_LOGIN, email);
+    }
+
+    public boolean isPasswordPwned(String password) throws NoSuchAlgorithmException {
+        String sha1 = sha1Hex(password);
+        String prefix = sha1.substring(0, 5);
+        String suffix = sha1.substring(5).toUpperCase();
+
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.pwnedpasswords.com/range/" + prefix;
+        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            return response.getBody().contains(suffix);
+        }
+
+        return false;
+    }
+
+    private String sha1Hex(String input) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+
+        md.reset();
+
+        byte[] buffer = input.getBytes(StandardCharsets.UTF_8);
+
+        md.update(buffer);
+
+        byte[] digest = md.digest();
+
+        String hex = "";
+
+        try (Formatter formatter = new Formatter()) {
+            for (byte b : digest) {
+                formatter.format("%02x", b);
+            }
+
+            hex = formatter.toString();
+        }
+
+        return hex;
     }
 }

@@ -19,10 +19,17 @@ const getUserTypeFromToken = (token: string): string | null => {
   return decodedToken ? decodedToken.userType : null;
 };
 
+// helper function to decode token for active
+const getActiveFromToken = (token: string): boolean | null => {
+  const decodedToken = decodeToken(token);
+  return decodedToken ? decodedToken.active : null;
+};
+
 // initialize userToken and userId from local storage
 const userToken = localStorage.getItem("userToken") ?? null;
 const userId = userToken ? getUserIdFromToken(userToken) : null;
 const userType = userToken ? getUserTypeFromToken(userToken) : null;
+const active = userToken ? getActiveFromToken(userToken) : null;
 
 const initialState = {
   loading: false,
@@ -31,7 +38,9 @@ const initialState = {
   userType: userType as string | null,
   userToken, // for storing the JWT
   error: null,
-  success: false, // for monitoring the registration process.
+  success: false, // for monitoring the registration process
+  active: active as boolean | null, // for monitoring the user's activation status
+  captchaRequired: false,
 };
 
 export const registerUser = createAsyncThunk(
@@ -55,10 +64,19 @@ export const login = createAsyncThunk(
   async (body: LoginFormData, { rejectWithValue }) => {
     try {
       const { data } = await appAxios.post("/auth/login", body);
+
+      if (!data.active) {
+        return rejectWithValue("Your account has not been confirmed. Please confirm your email address.");
+      }
+
+      if(data.captchaRequired) {
+        return rejectWithValue({ message: "Captcha required", captchaRequired: true });
+      }
+
       localStorage.setItem("userToken", data.jwt);
+
       return data;
     } catch (error: any) {
-      // return custom error message from backend if present
       if (error.response && error.response.data.message) {
         return rejectWithValue(error.response.data.message);
       } else {
@@ -80,6 +98,7 @@ const authSlice = createSlice({
       state.userId = null; // reset userId
       state.userType = null; // reset userType
       state.error = null;
+      state.active = null; // reset active
     },
   },
   extraReducers: (builder) => {
@@ -105,11 +124,13 @@ const authSlice = createSlice({
       state.userToken = action.payload.jwt;
       state.userId = getUserIdFromToken(action.payload.jwt); // get userId from token
       state.userType = getUserTypeFromToken(action.payload.jwt);
+      state.active = getActiveFromToken(action.payload.jwt);
     });
     builder.addCase(login.rejected, (state, action: any) => {
       state.loading = false;
-      state.error = action.payload;
-    });
+      state.error = action.payload.message || action.payload;
+      state.captchaRequired = action.payload.captchaRequired || false;
+    });    
   },
 });
 

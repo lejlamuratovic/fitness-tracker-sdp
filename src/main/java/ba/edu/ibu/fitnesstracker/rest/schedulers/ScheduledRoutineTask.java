@@ -7,11 +7,13 @@ import ba.edu.ibu.fitnesstracker.core.repository.ScheduledRoutineRepository;
 import ba.edu.ibu.fitnesstracker.core.repository.UserRepository;
 import ba.edu.ibu.fitnesstracker.core.service.EmailService;
 import ba.edu.ibu.fitnesstracker.core.service.NotificationService;
+import jakarta.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -33,7 +35,7 @@ public class ScheduledRoutineTask {
     }
 
     @Scheduled(cron = "0 * * * * *", zone = "UTC")
-    public void getScheduledRoutines() {
+    public void getScheduledRoutines() throws MessagingException, UnsupportedEncodingException {
         LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
         LocalDateTime oneMinuteLater = now.plusMinutes(1);
 

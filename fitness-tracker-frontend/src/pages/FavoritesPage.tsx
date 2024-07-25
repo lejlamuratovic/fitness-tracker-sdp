@@ -37,6 +37,7 @@ const FavoritesPage = () => {
         sx={{
           display: "block",
           margin: "0 auto",
+          pt: "50px",
           "@media screen and (max-width: 535px)": {
             pt: "100px",
           },

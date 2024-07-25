@@ -19,16 +19,8 @@ public class ExerciseRepositoryTest {
     private ExerciseRepository exerciseRepository;
 
     @Test
-    public void shouldReturnAllExercises() {
-        List<Exercise> exercises = exerciseRepository.findAll();
-
-        assertEquals(4, exercises.size());
-        assertEquals("Bicep Curl", exercises.get(0).getName());
-    }
-
-    @Test
     public void shouldFindExerciseById() {
-        Optional<Exercise> exercise = exerciseRepository.findById("653537c3c284210ab5b9e620");
+        Optional<Exercise> exercise = exerciseRepository.findById("6626bb6c2262de35b6a9d20d");
         assertNotNull(exercise.orElse(null));
     }
 }

@@ -64,10 +64,26 @@ const removeFavoriteRoutine = async (
     .put(`/users/${userId}/remove-favorite/${routineId}`)
     .then((response) => {
       console.log(response.data);
-    }).catch((error) => {
-      console.log(error.response.data);
-    });
+    })
 };
+
+const initiatePasswordReset = async (email: string): Promise<void> => {
+  return appAxios.get(`/auth/initiate-password-reset?email=${email}`).then((response) => {
+    console.log(response.data);
+  })
+};
+
+const verifyToken = async (token: string, email: string): Promise<void> => {
+  return appAxios.get(`/auth/verify-token?token=${token}&email=${email}`).then((response) => {
+    console.log(response.data);
+  })
+}
+
+const resetPassword = async (email: string, newPassword: string): Promise<void> => {
+  return appAxios.put(`/auth/reset-password`, { email, newPassword }).then((response) => {
+    console.log(response.data);
+  })
+}
 
 export default {
   getUserById,
@@ -75,5 +91,8 @@ export default {
   updateUserPassword,
   getFavoriteRoutines,
   addFavoriteRoutine,
-  removeFavoriteRoutine
+  removeFavoriteRoutine,
+  initiatePasswordReset,
+  verifyToken,
+  resetPassword
 };

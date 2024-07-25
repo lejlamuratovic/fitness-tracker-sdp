@@ -25,12 +25,15 @@ public class User implements UserDetails {
     private List<Routine> favoriteRoutines;
     private boolean isActive;
     private String confirmationToken;
+    private String passwordResetToken;
+    private Date passwordResetTokenCreationTime;
+
 
     public User() {
     }
 
     public User(String id, UserType userType, String firstName, String lastName, String email, String password,
-                Date creationDate, List<Routine> favouriteRoutines, boolean isActive, String confirmationToken) {
+                Date creationDate, List<Routine> favouriteRoutines, boolean isActive, String confirmationToken, String passwordResetToken, Date passwordResetTokenCreationTime) {
         this.id = id;
         this.userType = userType;
         this.firstName = firstName;
@@ -41,6 +44,8 @@ public class User implements UserDetails {
         this.favoriteRoutines = favouriteRoutines;
         this.isActive = isActive;
         this.confirmationToken = confirmationToken;
+        this.passwordResetToken = passwordResetToken;
+        this.passwordResetTokenCreationTime = passwordResetTokenCreationTime;
     }
 
     public User(User entity) {
@@ -141,11 +146,11 @@ public class User implements UserDetails {
     }
 
     public boolean isActive() {
-        return isActive;
+        return this.isActive;
     }
 
     public void setActive(boolean active) {
-        isActive = active;
+        this.isActive = active;
     }
 
     public String getConfirmationToken() {
@@ -154,5 +159,21 @@ public class User implements UserDetails {
 
     public void setConfirmationToken(String confirmationToken) {
         this.confirmationToken = confirmationToken;
+    }
+
+    public String getPasswordResetToken() {
+        return passwordResetToken;
+    }
+
+    public void setPasswordResetToken(String passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
+    }
+
+    public Date getPasswordResetTokenCreationTime() {
+        return passwordResetTokenCreationTime;
+    }
+
+    public void setPasswordResetTokenCreationTime(Date passwordResetTokenCreationTime) {
+        this.passwordResetTokenCreationTime = passwordResetTokenCreationTime;
     }
 }
