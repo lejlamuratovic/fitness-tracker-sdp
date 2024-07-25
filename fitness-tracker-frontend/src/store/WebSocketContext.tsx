@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useCallback, useState, Re
 import { useSelector } from "react-redux";
 
 import { RootState } from "src/store";
+import { WEBSOCKET_BASE_URL } from "src/constants";
 
 interface WebSocketContextType {
   addMessageListener: (listener: (message: any) => void) => void;
@@ -31,7 +32,8 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
   useEffect(() => {
     if (userId) {
       console.log("Initializing WebSocket connection for user:", userId);
-      ws.current = new WebSocket(`ws://localhost:8080/websocket?userId=${userId}`);
+      // ws.current = new WebSocket(`ws://localhost:8080/websocket?userId=${userId}`);
+      ws.current = new WebSocket(`${WEBSOCKET_BASE_URL}?userId=${userId}`);
       ws.current.onopen = () => {
         console.log("WebSocket connected for user:", userId);
         setConnectionStatus("Connected");
